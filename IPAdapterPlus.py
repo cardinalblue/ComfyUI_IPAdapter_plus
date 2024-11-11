@@ -339,12 +339,13 @@ def ipadapter_execute(model,
             for size in [(size, size) for size in range(640, 256, -64)]:
                 insightface.det_model.input_size = size # TODO: hacky but seems to be working
                 face = insightface.get(image_iface[i])
-                if face:
+                largest_face = max(face, key=lambda x: abs(x.bbox[2]-x.bbox[0]) * abs(x.bbox[3]-x.bbox[1]))
+                if largest_face:
                     if not is_portrait_unnorm:
-                        face_cond_embeds.append(torch.from_numpy(face[0].normed_embedding).unsqueeze(0))
+                        face_cond_embeds.append(torch.from_numpy(largest_face.normed_embedding).unsqueeze(0))
                     else:
-                        face_cond_embeds.append(torch.from_numpy(face[0].embedding).unsqueeze(0))
-                    image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=face[0].kps, image_size=336 if is_kwai_kolors_faceid else 256 if is_sdxl else 224)))
+                        face_cond_embeds.append(torch.from_numpy(largest_face.embedding).unsqueeze(0))
+                    image.append(image_to_tensor(face_align.norm_crop(image_iface[i], landmark=largest_face.kps, image_size=336 if is_kwai_kolors_faceid else 256 if is_sdxl else 224)))
 
                     if 640 not in size:
                         print(f"\033[33mINFO: InsightFace detection resolution lowered to {size}.\033[0m")
